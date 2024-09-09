@@ -53,8 +53,8 @@ def calculate_win_percentage(combination_to_play, winning_sequence):
 
 # Funzione per inviare un'email con i risultati
 def send_email(subject, body, to_email):
-    from_email = 'backup.pc@ik.me'
-    password = 'a$@EtJ4n*uqjY#Q'
+    from_email = 'Email da usare come invio'
+    password = 'Password della mail'
     
     msg = MIMEMultipart()
     msg['From'] = from_email
@@ -64,7 +64,7 @@ def send_email(subject, body, to_email):
     msg.attach(MIMEText(body, 'plain'))
     
     try:
-        server = smtplib.SMTP_SSL('mail.infomaniak.com', 465)
+        server = smtplib.SMTP_SSL('Server di posta della mail', Porta SSL)
         server.login(from_email, password)
         text = msg.as_string()
         server.sendmail(from_email, to_email, text)
@@ -122,7 +122,7 @@ def main():
 
         # Invia i risultati via email
         subject = "Risultati Superenalotto - 3 Combinazioni"
-        send_email(subject, body, 'fabrizio.diterlizzi@tim.it')
+        send_email(subject, body, 'Email del destinatario')
 
     elif risposta.upper() == "NO":
         print("Processo terminato.")
