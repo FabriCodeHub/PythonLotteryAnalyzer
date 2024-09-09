@@ -1,4 +1,3 @@
-
 import os
 import pandas as pd
 from collections import Counter
@@ -41,26 +40,10 @@ def calculate_probabilities(number_counter, total_numbers):
     return probabilities
 
 # Funzione per generare una combinazione di 6 numeri basata sulle probabilità
-def generate_combination(probabilities, previous_combinations):
-    sorted_numbers = sorted(probabilities, key=probabilities.get, reverse=True)
-    
-    # Genera combinazioni finché non otteniamo una combinazione unica
-    while True:
-        combination = sorted(random.sample(sorted_numbers, 6))
-        if combination not in previous_combinations:
-            previous_combinations.add(tuple(combination))  # Aggiungiamo la combinazione all'insieme delle combinazioni già generate
-            return combination
-
-# Funzione per generare 4 combinazioni distinte
-def generate_four_combinations(probabilities):
-    previous_combinations = set()
-    combinations = []
-    
-    for _ in range(4):
-        combination = generate_combination(probabilities, previous_combinations)
-        combinations.append(combination)
-    
-    return combinations
+def generate_combination(probabilities):
+    numbers = list(probabilities.keys())
+    weights = list(probabilities.values())
+    return sorted(random.choices(numbers, weights=weights, k=6))
 
 # Funzione per calcolare la percentuale di vincita
 def calculate_win_percentage(combination_to_play, winning_sequence):
@@ -69,5 +52,82 @@ def calculate_win_percentage(combination_to_play, winning_sequence):
     return percentage
 
 # Funzione per inviare un'email con i risultati
-def send_email():
-    pass  # Funzionalità da completare
+def send_email(subject, body, to_email):
+    from_email = 'backup.pc@ik.me'
+    password = 'a$@EtJ4n*uqjY#Q'
+    
+    msg = MIMEMultipart()
+    msg['From'] = from_email
+    msg['To'] = to_email
+    msg['Subject'] = subject
+    
+    msg.attach(MIMEText(body, 'plain'))
+    
+    try:
+        server = smtplib.SMTP_SSL('mail.infomaniak.com', 465)
+        server.login(from_email, password)
+        text = msg.as_string()
+        server.sendmail(from_email, to_email, text)
+        server.quit()
+        print("Email inviata con successo.")
+    except Exception as e:
+        print(f"Errore durante l'invio dell'email: {e}")
+
+# Funzione principale per gestire l'interazione con l'utente
+def main():
+    # Definisci il percorso della cartella contenente i file PDF
+    pdf_folder_path = r'C:\Users\batte\Desktop\Superenalotto\Archivio Estrazioni'
+
+    # Leggere tutti i file PDF nella cartella
+    all_dfs = []
+    for file_name in os.listdir(pdf_folder_path):
+        if file_name.endswith('.pdf'):
+            pdf_path = os.path.join(pdf_folder_path, file_name)
+            pdf_df = extract_data_from_pdf(pdf_path)
+            all_dfs.append(pdf_df)
+
+    # Concatenare tutti i dataframe
+    df = pd.concat(all_dfs, ignore_index=True)
+
+    # Contare le occorrenze di ciascun numero nelle estrazioni
+    number_counter = count_number_occurrences(df)
+
+    # Calcolare le probabilità di ciascun numero
+    total_numbers = df[['Num1', 'Num2', 'Num3', 'Num4', 'Num5', 'Num6']].size
+    probabilities = calculate_probabilities(number_counter, total_numbers)
+
+    # Chiedi all'utente se vuole creare le combinazioni
+    risposta = input("Creo Combinazioni? (SI/NO): ")
+
+    if risposta.upper() == "SI":
+        # Generazione di 3 combinazioni da giocare basate sulle probabilità calcolate
+        combinations_to_play = [generate_combination(probabilities) for _ in range(3)]
+
+        # Stampare le combinazioni generate
+        for i, combination in enumerate(combinations_to_play, 1):
+            print(f"Combinazione {i} Generata:", combination)
+
+        # Calcolo della percentuale di vincita per ogni combinazione
+        # Supponiamo che winning_sequence sia una lista dei numeri vincenti estratti in un concorso.
+        # Inserisci qui la lista dei numeri vincenti
+        winning_sequence = [1, 2, 3, 4, 5, 6]  # Sostituisci questa lista con la sequenza vincente effettiva
+
+        win_percentages = [calculate_win_percentage(combination, winning_sequence) for combination in combinations_to_play]
+        
+        # Preparazione del corpo dell'email
+        body = "Risultati Superenalotto:\n\n"
+        for i, (combination, percentage) in enumerate(zip(combinations_to_play, win_percentages), 1):
+            body += f"Combinazione {i} Generata: {combination}\n"
+            body += f"Percentuale di vincita: {percentage}%\n\n"
+
+        # Invia i risultati via email
+        subject = "Risultati Superenalotto - 3 Combinazioni"
+        send_email(subject, body, 'fabrizio.diterlizzi@tim.it')
+
+    elif risposta.upper() == "NO":
+        print("Processo terminato.")
+    else:
+        print("Risposta non valida. Si prega di rispondere con 'SI' o 'NO'.")
+
+if __name__ == "__main__":
+    main()
